@@ -1,0 +1,27 @@
+{
+  "name": "Fellowship Bible Church: Command Central",
+  "description": "This extension adds additional features to the command central page to assist with Command Central during the check-in process at Fellowship Bible Church.",
+  "version": "0.1",
+  "background": {
+    "scripts": [ "background.js" ]
+  },
+  "icons": { "128": "fbc_128x128.jpg" },
+  "options_page": "options.html",
+  "permissions": [
+    "tabs", "https://portal.fellowshipone.com/*"
+  ],
+  "browser_action": {
+    "default_title": "Options",
+    "default_icon": "fbc_16x16.jpg"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://portal.fellowshipone.com/*"],
+      //"css": ["mystyles.css"],
+      "js": ["jquery-1.8.0.min.js", "fellowshipone.js"]
+    }
+  ],
+  "manifest_version": 2
+}
+
+
