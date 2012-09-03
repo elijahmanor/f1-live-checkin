@@ -23,6 +23,9 @@
 	kiosk.rearrange = function() {
 		kiosk.removeRows();
 		kiosk.rearrangeColumns();
+		kiosk.removeColumn( "Open" );
+		kiosk.removeColumn( "Area" );
+		kiosk.insertMaxParticipants();
 	};
 
 	kiosk.removeRows = function() {
@@ -34,6 +37,8 @@
 				$this.closest( "tr" ).remove();
 			}
 		});
+
+		$( ".grid tr" ).removeClass( "zebra" ).filter( ":odd" ).addClass( "zebra" );
 	};
 
 	kiosk.rearrangeColumns = function( index ) {
@@ -42,7 +47,18 @@
 
 		kiosk.mergeColumns( $participants.index() );
 		kiosk.mergeColumns( $staff.index() );
+
+		jQuery( ".grid td:nth-child(1) a" ).remove();
 	};
+
+	kiosk.removeColumn = function( text ) {
+		var index = jQuery( ".grid th:contains('" + text + "')" ).index() + 1;
+
+		jQuery( ".grid th:nth-child(" + index + "), .grid td:nth-child(" + index + ")" ).remove();
+	};
+
+//<a href="currentcheckin.aspx?actdetid=994485&amp;oc=0">Close</a>
+//<a href="currentcheckin.aspx?actdetid=994461&amp;oc=1">Open</a>
 
 	kiosk.mergeColumns = function( index ) {
 		index += 1;
@@ -51,11 +67,21 @@
 				$show = $this.next().find( "a" );
 
 			$this.html( function( index, html ) {
-				return "<a href='" + $show.attr( "href" ) + "'>" + html + "</a>";
+				return $.trim( html ) ? "<a href='" + $show.attr( "href" ) + "'>" + html + "</a>" : "";
 			});
 		});
 		index += 1;
 		jQuery( ".grid th:nth-child(" + index + "), .grid td:nth-child(" + index + ")" ).remove();
+	};
+
+	kiosk.insertMaxParticipants = function() {
+		var $participants = $( ".grid th:contains('Participants')" );
+
+		$( ".grid td:nth-child(" + ( $participants.index() + 1 ) + ")" ).each(function() {
+			$( this ).html(function( index, html ) {
+				return $.trim( html ) ? html + "<span> / </span><span class='participant-max' contenteditable='true'>0</span>" : "";
+			});
+		});
 	};
 
 	kiosk.getCounts = function() {
