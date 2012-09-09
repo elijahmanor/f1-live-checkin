@@ -16,9 +16,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://portal.fellowshipone.com/*"],
-      //"css": ["mystyles.css"],
-      "js": ["jquery-1.8.0.min.js", "fellowshipone.js"]
+      "matches": [ "https://portal.fellowshipone.com/*" ],
+      "css": [ "bootstrap.css", "bootstrap-responsive.css", "toastr.css", "toastr-responsive.css", "jquery-ui.css" ],
+      "js": [ "jquery-1.8.0.min.js", "bootstrap.js", "toastr.js", "jquery-ui.js", "fellowshipone.js" ]
     }
   ],
   "manifest_version": 2
