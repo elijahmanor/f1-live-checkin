@@ -2149,7 +2149,7 @@ table [class*=span],
   *margin-right: .3em;
   line-height: 14px;
   vertical-align: text-top;
-  background-image: url("../img/glyphicons-halflings.png");
+  background-image: url("http://twitter.github.com/bootstrap/assets/img/glyphicons-halflings.png");
   background-position: 14px 14px;
   background-repeat: no-repeat;
 }
@@ -2169,7 +2169,7 @@ table [class*=span],
 .dropdown-menu > li > a:hover > [class*=" icon-"],
 .dropdown-menu > .active > a > [class^="icon-"],
 .dropdown-menu > .active > a > [class*=" icon-"] {
-  background-image: url("../img/glyphicons-halflings-white.png");
+  background-image: url("http://twitter.github.com/bootstrap/assets/img/glyphicons-halflings-white.png");
 }
 
 .icon-glass {
@@ -5282,6 +5282,12 @@ a.thumbnail:hover {
   white-space: nowrap;
   vertical-align: baseline;
   background-color: #999999;
+
+  /* BEGIN ETM */
+  width: 20px;
+  text-align: center;
+  display: inline-block;
+  /* END ETM */
 }
 
 .label {
@@ -5772,3 +5778,16 @@ a.badge:hover {
 .affix {
   position: fixed;
 }
+
+/* BEGIN ETM */
+.icon-refresh-animate {
+  -webkit-animation-name: rotateThis;
+  -webkit-animation-duration:.5s;
+  -webkit-animation-iteration-count:infinite;
+  -webkit-animation-timing-function:linear;
+}
+@-webkit-keyframes rotateThis {
+  from {-webkit-transform:scale(1) rotate(0deg);}
+  to {-webkit-transform:scale(1) rotate(360deg);}
+}
+/* END ETM */
