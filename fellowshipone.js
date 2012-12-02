@@ -1,14 +1,14 @@
 /*jshint eqeqeq:true, strict:true */
-/*globals jQuery:false, console:false, toastr:false, chrome:false, Gauge:false */
+/*globals jQuery:false, console:false, toastr:false, chrome:false, Gauge:false, JustGage:false */
 
 /* TODO
  * - Clean up the Staff dialog
  * - Making Open/Close class use AJAX instead of post-back
- * - Make stats section on the right
  * - Refactor code
- * - Play sound when max has been reached
  * - http://omnipotent.net/jquery.sparkline/#syntax
  * - Make Staff error when 0 and warning when 1, green when 3+
+ * - Store rate information in localStorage
+ * - Highlight rows on 1st page load
  */
 
 (function ( kiosk, $, undefined ) {
@@ -17,11 +17,31 @@
 	kiosk.updateFrequency = 10000;
 	kiosk.timers = [];
 	kiosk.updateFlag = true;
+	kiosk.checkinRate = [ { total: 0, rate: 0 } ];
 
 	kiosk.init = function() {
 		kiosk.clearTimeout();
 
 		kiosk.rearrange();
+
+		kiosk.checkinRateUpdate = (function checkinRateUpdate() {
+			window.setTimeout( function() {
+				var total = parseInt( $( ".table tr:last td:nth-child(3)" ).text(), 10 ),
+					lastCheckInRate = kiosk.checkinRate[ kiosk.checkinRate.length - 1 ],
+					rate = Math.floor( Math.random() * 26 );
+					// rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0; //Math.floor( Math.random() * 26 );
+
+				console.log({ total: total, rate: rate });
+				kiosk.checkinRate.push({ total: total, rate: rate });
+				$( "#checkinRateValue" ).text( rate );
+				kiosk.gauge.set( rate );
+				kiosk.guage.current.refresh( rate );
+				kiosk.guage.average.refresh( 0 );
+				jQuery( "#debug" ).html( JSON.stringify( kiosk.checkinRate ) );
+				checkinRateUpdate();
+			}, 5000 );
+			// }, 60000 );
+		}());
 
 		kiosk.startRefreshLoop();
 	};
@@ -56,7 +76,9 @@
 	};
 
 	kiosk.rearrange = function() {
+
 		kiosk.removeRows();
+		jQuery("form .grid").removeClass( "grid" ).addClass( "table table-bordered table-hover table-striped" );
 		kiosk.rearrangeColumns();
 		kiosk.removeColumn( "Open" );
 		kiosk.removeColumn( "Area" );
@@ -68,8 +90,8 @@
 		kiosk.hijackParticipant();
 		kiosk.hijackStaff();
 
-		jQuery("form .grid").css({ float: "left", width: "52%"})
-			.after('<div class="stats" style="float:right; width: 45%;"><div class="hero-unit"><div><h1>Check-ins per Minute</h1><div><h4 style="font-size: 2em; text-align: center;">23</h4><canvas id="checkinRate" style="width: 100%; height: 150px; position: relative;"></canvas></div></div></div></div>');
+		jQuery("form .table").css({ float: "left", width: "52%"})
+			.after('<div class="stats" style="float:right; width: 45%;"><div class="hero-unit"><div><h1>Check-ins per Minute</h1><div><h4 id="checkinRateValue" style="font-size: 2em; text-align: center;">0</h4><div id="gaugeCheckinRate" class="200x160px"></div><div id="gaugeCheckinAverage" class="200x160px"></div><canvas id="checkinRate" style="width: 100%; height: 150px; position: relative;"></canvas><button id="resetCheckinRate" class="btn">Reset</button></div></div></div><div class="hero-unit" id="debug"></div></div>');
 		kiosk.initGuage();
 
 		jQuery( "#header_search" ).val( "" );
@@ -92,8 +114,8 @@
 	};
 
 	kiosk.updateOpenClosed = function() {
-		jQuery( ".grid a[href$='&oc=1']" ).html( '<i class="icon-remove"></i>' ).closest( "tr" ).css( "text-decoration", "line-through" );
-		jQuery( ".grid a[href$='&oc=0']" ).html( '<i class="icon-ok"></i>' ).closest( "tr" ).css( "text-decoration", "none" );
+		jQuery( ".table a[href$='&oc=1']" ).html( '<i class="icon-remove"></i>' ).closest( "tr" ).css( "text-decoration", "line-through" );
+		jQuery( ".table a[href$='&oc=0']" ).html( '<i class="icon-ok"></i>' ).closest( "tr" ).css( "text-decoration", "none" );
 	};
 
 	kiosk.moveMinistrySelector = function() {
@@ -101,7 +123,7 @@
 		jQuery( "#breadcrumb" ).text( function( index, text ) { return text + " > "; } );
 		jQuery( "#ministry_selection td" ).contents().appendTo( "#breadcrumb" );
 		jQuery( "#breadcrumb" ).prependTo( "#aspnetForm" );
-		jQuery( "form .grid_16:first" ).remove();
+		jQuery( "form .table_16:first" ).remove();
 	};
 
 	kiosk.removeRows = function( context ) {
@@ -116,32 +138,33 @@
 			}
 		});
 
-		$( ".grid tr" ).removeClass( "zebra" ).filter( ":odd" ).addClass( "zebra" );
+		//$( ".table tr" ).removeClass( "zebra" ).filter( ":odd" ).addClass( "zebra" );
 	};
 
 	kiosk.rearrangeColumns = function( index ) {
-		var $participants = $( ".grid th:contains('Participant Count')" ).html( "Participants" ),
-			$staff = $( ".grid th:contains('Staff Count')" ).html( "Staff" );
+		var $participants = $( ".table th:contains('Participant Count')" ).html( "Participants" ),
+			$staff = $( ".table th:contains('Staff Count')" ).html( "Staff" );
 
 		kiosk.mergeColumns( $participants.index() );
 		kiosk.mergeColumns( $staff.index() );
 
-		jQuery( ".grid td:nth-child(1) a" ).remove();
+		jQuery( ".table td:nth-child(1) a" ).remove();
 	};
 
 	kiosk.removeColumn = function( text ) {
-		var index = jQuery( ".grid th:contains('" + text + "')" ).index() + 1;
+		var index = jQuery( ".table th:contains('" + text + "')" ).index() + 1;
 
-		jQuery( ".grid th:nth-child(" + index + "), .grid td:nth-child(" + index + ")" ).remove();
+		jQuery( ".table th:nth-child(" + index + "), .table td:nth-child(" + index + ")" ).remove();
 	};
 
 	kiosk.mergeColumns = function( index ) {
 		index += 1;
-		jQuery( ".grid td:nth-child(" + index + ")" ).each( function() {
+		jQuery( ".table td:nth-child(" + index + ")" ).each( function() {
 			var $this = $( this ),
 				$show = $this.next().find( "a" ),
 				$row = $this.closest( "tr" );
 
+			// TODO: highlight row
 			if ( $row.index() !== $row.siblings().length ) {
 				$this.html( function( index, html ) {
 					return $.trim( html ) ? "<a href='" + $show.attr( "href" ) + "'><span class='badge badge-success'>" + html + "</span></a>" : '<a href="#"><span class="badge badge-success">0</span></a>';
@@ -149,13 +172,13 @@
 			}
 		});
 		index += 1;
-		jQuery( ".grid th:nth-child(" + index + "), .grid td:nth-child(" + index + ")" ).remove();
+		jQuery( ".table th:nth-child(" + index + "), .table td:nth-child(" + index + ")" ).remove();
 	};
 
 	kiosk.insertMaxParticipants = function() {
-		var $participants = $( ".grid th:contains('Participants')" );
+		var $participants = $( ".table th:contains('Participants')" );
 
-		$( ".grid td:nth-child(" + ( $participants.index() + 1 ) + ")" ).each(function() {
+		$( ".table td:nth-child(" + ( $participants.index() + 1 ) + ")" ).each(function() {
 			var $this = $( this ),
 				$row = $this.closest( "tr" );
 
@@ -188,17 +211,19 @@
 	};
 
 	kiosk.updateCounts = function( title, counts ) {
-		var columnIndex = $( ".grid th:contains('" + title + "')" ).index(),
+		var columnIndex = $( ".table th:contains('" + title + "')" ).index(),
 			countIndex = 0;
 
-		$( ".grid td:nth-child(" + ( columnIndex + 1 ) + ")" ).each(function() {
+		$( ".table td:nth-child(" + ( columnIndex + 1 ) + ")" ).each(function() {
 			var $badge = $( this ).find( "a .badge" ),
 				currentCount = parseInt( counts[ countIndex ], 10 ),
 				maxCount = parseInt( $badge.closest( "td" ).find( ".participant-max" ).text(), 10 );
 
 			$badge = $badge.length ? $badge : $( this );
 			if ( $badge.text() !== counts[ countIndex ] || kiosk.updateFlag ) { // TODO: Remove this comment...
-				$badge.text( counts[ countIndex ] ).end().effect( "highlight", {}, 6000 );
+				$badge.text( counts[ countIndex ] ) //.end()
+					//.effect( "highlight", {}, 6000 );
+					.effect( "pulsate", { times: 3 }, 500 );
 				kiosk.updateBadge( $badge, currentCount, maxCount );
 				// .effect( "pulsate", { times: 3 }, 500 );
 			}
@@ -207,18 +232,23 @@
 	};
 
 	kiosk.updateBadge = function( $badge, currentCount, maximumCount ) {
-		var classes = "badge-important badge-success badge-warning badge-inverse";
+		var classes = "badge-important badge-success badge-warning badge-inverse",
+			rowClasses = "success error warning info",
+			$row = $badge.closest( "tr" );
 
 		if ( $badge.closest( "tr" ).css( "text-decoration" ) === "line-through" ) {
 			$badge.removeClass( classes ); //.addClass( "badge-inverse" );
 		} else {
 			if ( currentCount >= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-important" );
+				$row.removeClass( rowClasses ).addClass( "error" );
 				kiosk.playSound($.trim($badge.closest("tr").find("td:nth-child(2)").text()));
 			} else if ( maximumCount - currentCount <= 2 ) {
 				$badge.removeClass( classes ).addClass( "badge-warning" );
+				$row.removeClass( rowClasses ).addClass( "warning" );
 			} else if ( currentCount <= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-success" );
+				$row.removeClass( rowClasses );
 			}
 		}
 	};
@@ -226,7 +256,7 @@
 	kiosk.updateStatus = function( status ) {
 		var index = 0;
 
-		$( ".grid td:nth-child(1)" ).each(function() {
+		$( ".table td:nth-child(1)" ).each(function() {
 			var $anchor = $( this ).find( "a" );
 			if ( ~status[ index ].indexOf( "oc=1" ) ) {
 				$anchor.attr( "href", function( index, href ) {
@@ -372,10 +402,35 @@
 		};
 
 		var target = document.getElementById('checkinRate'); // your canvas element
-		var gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
-		gauge.maxValue = 3000; // set max gauge value
-		gauge.animationSpeed = 22; // set animation speed (32 is default value)
-		gauge.set(1125); // set actual value
+		kiosk.gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
+		kiosk.gauge.maxValue = 25; // set max gauge value
+		kiosk.gauge.animationSpeed = 22; // set animation speed (32 is default value)
+		kiosk.gauge.set( 0 ); // set actual value
+
+		jQuery( "#resetCheckinRate" ).on( "click", function() {
+			kiosk.checkinRate = [ { total: 0, rate: 0 } ];
+			kiosk.checkinRateUpdate();
+		});
+
+		kiosk.guage = {};
+
+		kiosk.guage.current = new JustGage({
+			id: "gaugeCheckinRate",
+			value: 0,
+			min: 0,
+			max: 100,
+			title: "Current Check-ins",
+			label: "per minute"
+		});
+
+		kiosk.guage.average = new JustGage({
+			id: "gaugeCheckinAverage",
+			value: 0,
+			min: 0,
+			max: 100,
+			title: "Average Check-ins",
+			label: "per minute"
+		});
 	};
 
 /*
