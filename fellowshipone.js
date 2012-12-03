@@ -28,19 +28,23 @@
 			window.setTimeout( function() {
 				var total = parseInt( $( ".table tr:last td:nth-child(3)" ).text(), 10 ),
 					lastCheckInRate = kiosk.checkinRate[ kiosk.checkinRate.length - 1 ],
-					rate = Math.floor( Math.random() * 26 );
-					// rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0; //Math.floor( Math.random() * 26 );
+					// rate = Math.floor( Math.random() * 31 ),
+					rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0, //Math.floor( Math.random() * 26 ),
+					average = 0;
 
 				console.log({ total: total, rate: rate });
 				kiosk.checkinRate.push({ total: total, rate: rate });
+				kiosk.checkinRate.forEach( function( item ) {
+					average += item.rate;
+				});
+				average = average / kiosk.checkinRate.length;
 				$( "#checkinRateValue" ).text( rate );
-				kiosk.gauge.set( rate );
 				kiosk.guage.current.refresh( rate );
-				kiosk.guage.average.refresh( 0 );
-				jQuery( "#debug" ).html( JSON.stringify( kiosk.checkinRate ) );
+				kiosk.guage.average.refresh( Math.floor( average ) );
+				// jQuery( "#debug" ).show.().html( JSON.stringify( kiosk.checkinRate ) );
 				checkinRateUpdate();
-			}, 5000 );
-			// }, 60000 );
+			// }, 5000 );
+			}, 60000 );
 		}());
 
 		kiosk.startRefreshLoop();
@@ -78,7 +82,8 @@
 	kiosk.rearrange = function() {
 
 		kiosk.removeRows();
-		jQuery("form .grid").removeClass( "grid" ).addClass( "table table-bordered table-hover table-striped" );
+		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-hover table-striped" );
+		jQuery( ".table td:nth-child(3)" ).css( "text-align", "center" );
 		kiosk.rearrangeColumns();
 		kiosk.removeColumn( "Open" );
 		kiosk.removeColumn( "Area" );
@@ -91,7 +96,7 @@
 		kiosk.hijackStaff();
 
 		jQuery("form .table").css({ float: "left", width: "52%"})
-			.after('<div class="stats" style="float:right; width: 45%;"><div class="hero-unit"><div><h1>Check-ins per Minute</h1><div><h4 id="checkinRateValue" style="font-size: 2em; text-align: center;">0</h4><div id="gaugeCheckinRate" class="200x160px"></div><div id="gaugeCheckinAverage" class="200x160px"></div><canvas id="checkinRate" style="width: 100%; height: 150px; position: relative;"></canvas><button id="resetCheckinRate" class="btn">Reset</button></div></div></div><div class="hero-unit" id="debug"></div></div>');
+			.after('<div class="stats" style="float:right; width: 45%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:375px; height:250px"></div><div id="gaugeCheckinAverage" style="width:375px; height:250px"></div><button id="resetCheckinRate" class="btn">Reset</button></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
 		kiosk.initGuage();
 
 		jQuery( "#header_search" ).val( "" );
@@ -386,27 +391,6 @@
 	};
 
 	kiosk.initGuage = function() {
-		var opts = {
-				lines: 12, // The number of lines to draw
-				angle: 0.15, // The length of each line
-				lineWidth: 0.39, // The line thickness
-				pointer: {
-				length: 0.92, // The radius of the inner circle
-				strokeWidth: 0.035, // The rotation offset
-				color: '#000000' // Fill color
-			},
-			colorStart: '#6FADCF',   // Colors
-			colorStop: '#8FC0DA',    // just experiment with them
-			strokeColor: '#E0E0E0',   // to see which ones work best for you
-			generateGradient: true
-		};
-
-		var target = document.getElementById('checkinRate'); // your canvas element
-		kiosk.gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
-		kiosk.gauge.maxValue = 25; // set max gauge value
-		kiosk.gauge.animationSpeed = 22; // set animation speed (32 is default value)
-		kiosk.gauge.set( 0 ); // set actual value
-
 		jQuery( "#resetCheckinRate" ).on( "click", function() {
 			kiosk.checkinRate = [ { total: 0, rate: 0 } ];
 			kiosk.checkinRateUpdate();
@@ -418,7 +402,7 @@
 			id: "gaugeCheckinRate",
 			value: 0,
 			min: 0,
-			max: 100,
+			max: 30,
 			title: "Current Check-ins",
 			label: "per minute"
 		});
@@ -427,7 +411,7 @@
 			id: "gaugeCheckinAverage",
 			value: 0,
 			min: 0,
-			max: 100,
+			max: 30,
 			title: "Average Check-ins",
 			label: "per minute"
 		});
