@@ -3,49 +3,61 @@
 
 /* TODO
  * - Clean up the Staff dialog
- * - Making Open/Close class use AJAX instead of post-back
  * - Refactor code
- * - http://omnipotent.net/jquery.sparkline/#syntax
  * - Make Staff error when 0 and warning when 1, green when 3+
- * - Store rate information in localStorage
- * - Highlight rows on 1st page load
  */
 
 (function ( kiosk, $, undefined ) {
 	"use strict";
 
+	var rate = window.localStorage[ "checkinRate" ];
 	kiosk.updateFrequency = 10000;
 	kiosk.timers = [];
 	kiosk.updateFlag = true;
-	kiosk.checkinRate = [ { total: 0, rate: 0 } ];
+	kiosk.checkinRate = ( rate ? JSON.parse( rate ) : undefined ) || { status: "stopped", stats: [ { total: 0, rate: 0 } ] };
 
 	kiosk.init = function() {
 		kiosk.clearTimeout();
 
 		kiosk.rearrange();
+		kiosk.checkinRateRender = function() {
+			var stat = kiosk.checkinRate.stats[ kiosk.checkinRate.stats.length - 1 ],
+				average = 0;
 
-		kiosk.checkinRateUpdate = (function checkinRateUpdate() {
-			window.setTimeout( function() {
+			kiosk.checkinRate.stats.forEach( function( item ) {
+				average += item.rate;
+			});
+			average = average / kiosk.checkinRate.stats.length;
+
+			$( "#checkinRateValue" ).text( stat.rate );
+			kiosk.guage.current.refresh( stat.rate );
+			kiosk.guage.average.refresh( Math.floor( average ) );
+			kiosk.guage.total.refresh( Math.floor( stat.total ) );
+			jQuery( "#debug" ).show().css( "padding" , "15px" ).html( JSON.stringify( kiosk.checkinRate ) );
+		};
+		kiosk.checkinRateUpdate = (function update() {
+			var checkinRateUpdate = function() {
 				var total = parseInt( $( ".table tr:last td:nth-child(3)" ).text(), 10 ),
-					lastCheckInRate = kiosk.checkinRate[ kiosk.checkinRate.length - 1 ],
+					lastCheckInRate = kiosk.checkinRate.stats[ kiosk.checkinRate.stats.length - 1 ],
 					// rate = Math.floor( Math.random() * 31 ),
-					rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0, //Math.floor( Math.random() * 26 ),
+					rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0,
 					average = 0;
 
-				console.log({ total: total, rate: rate });
-				kiosk.checkinRate.push({ total: total, rate: rate });
-				kiosk.checkinRate.forEach( function( item ) {
-					average += item.rate;
-				});
-				average = average / kiosk.checkinRate.length;
-				$( "#checkinRateValue" ).text( rate );
-				kiosk.guage.current.refresh( rate );
-				kiosk.guage.average.refresh( Math.floor( average ) );
-				// jQuery( "#debug" ).show.().html( JSON.stringify( kiosk.checkinRate ) );
-				checkinRateUpdate();
-			// }, 5000 );
-			}, 60000 );
+				if ( kiosk.checkinRate.status === "checking" ) {
+					console.log({ total: total, rate: rate });
+					kiosk.checkinRate.stats.push({ total: total, rate: rate });
+					window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
+				}
+				kiosk.checkinRateRender();
+				update();
+			};
+
+			// window.setTimeout( checkinRateUpdate, 15000 );
+			window.setTimeout( checkinRateUpdate, 60000 );
+
+			return checkinRateUpdate;
 		}());
+		kiosk.checkinRateRender();
 
 		kiosk.startRefreshLoop();
 	};
@@ -80,13 +92,14 @@
 	};
 
 	kiosk.rearrange = function() {
-
 		kiosk.removeRows();
 		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-hover table-striped" );
-		jQuery( ".table td:nth-child(3)" ).css( "text-align", "center" );
 		kiosk.rearrangeColumns();
 		kiosk.removeColumn( "Open" );
 		kiosk.removeColumn( "Area" );
+		jQuery( ".table th:nth-child(3), .table td:nth-child(3)" ).css( "text-align", "center" );
+		jQuery( ".table th:nth-child(4), .table td:nth-child(4)" ).css( "text-align", "center" );
+		kiosk.insertSparklinks();
 		kiosk.insertMaxParticipants();
 		kiosk.moveMinistrySelector();
 		kiosk.updateOpenClosed();
@@ -94,12 +107,42 @@
 		kiosk.tweakCurrentCheckInSelector();
 		kiosk.hijackParticipant();
 		kiosk.hijackStaff();
+		kiosk.hijackOpenClosed();
 
-		jQuery("form .table").css({ float: "left", width: "52%"})
-			.after('<div class="stats" style="float:right; width: 45%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:375px; height:250px"></div><div id="gaugeCheckinAverage" style="width:375px; height:250px"></div><button id="resetCheckinRate" class="btn">Reset</button></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
+		jQuery("form .table").css({ float: "left", width: "60%"})
+			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:175px"></div><div id="gaugeCheckinAverage" style="width:300px; height:175px"></div><div id="gaugeCheckinTotal" style="width:300px; height:175px"></div><div style="text-align: right;"><button id="startCheckinRate" style="margin-right: 5px;" class="btn btn-primary" type="button">Start</button><button id="resetCheckinRate" style="margin-right: 5px;" class="btn">Reset</button><button id="stopCheckinRate" type="button" style="margin-right: 5px;" class="btn btn-danger" type="button">Stop</button></div></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
 		kiosk.initGuage();
 
 		jQuery( "#header_search" ).val( "" );
+	};
+
+	kiosk.hijackOpenClosed = function() {
+		jQuery( "a[href^='currentcheckin.aspx?actdetid=']" ).on( "click", function( e ) {
+			var href = $( this ).attr( "href" );
+
+			jQuery.ajax({
+				type: "POST",
+				accepts: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+				contentType: "application/x-www-form-urlencoded",
+				url: href,
+				data: jQuery( "#aspnetForm" ).serialize(),
+				beforeSend: function( xhr ) {
+					xhr.setRequestHeader( "X-Requested-With", { toString: function() { return ""; } } );
+				},
+				success: function( data ) {
+					var $data = $( data ),
+						found = $data.find( "a[href^='" + href.substr( 0, href.indexOf( "&amp;" ) ) +  "']" ).length;
+
+					console.log( "found: " + found );
+					kiosk.getCounts();
+				},
+				error: function( data ) {
+					console.log( data, "error" );
+					toastr.error( "Error" );
+				}
+			});
+			e.preventDefault();
+		});
 	};
 
 	kiosk.tweakCurrentCheckInSelector = function() {
@@ -128,7 +171,8 @@
 		jQuery( "#breadcrumb" ).text( function( index, text ) { return text + " > "; } );
 		jQuery( "#ministry_selection td" ).contents().appendTo( "#breadcrumb" );
 		jQuery( "#breadcrumb" ).prependTo( "#aspnetForm" );
-		jQuery( "form .table_16:first" ).remove();
+		// jQuery( "form .table_16:first" ).remove();
+		jQuery( ".grid_16:first" ).remove();
 	};
 
 	kiosk.removeRows = function( context ) {
@@ -142,8 +186,6 @@
 				$this.closest( "tr" ).remove();
 			}
 		});
-
-		//$( ".table tr" ).removeClass( "zebra" ).filter( ":odd" ).addClass( "zebra" );
 	};
 
 	kiosk.rearrangeColumns = function( index ) {
@@ -222,10 +264,17 @@
 		$( ".table td:nth-child(" + ( columnIndex + 1 ) + ")" ).each(function() {
 			var $badge = $( this ).find( "a .badge" ),
 				currentCount = parseInt( counts[ countIndex ], 10 ),
-				maxCount = parseInt( $badge.closest( "td" ).find( ".participant-max" ).text(), 10 );
+				maxCount = parseInt( $badge.closest( "td" ).find( ".participant-max" ).text(), 10 ),
+				$sparkline = $( this ).prev().find( ".sparklines" ),
+				sparkCounts = $sparkline.data( "counts" ) || [];
 
 			$badge = $badge.length ? $badge : $( this );
-			if ( $badge.text() !== counts[ countIndex ] || kiosk.updateFlag ) { // TODO: Remove this comment...
+
+			sparkCounts.push( counts[ countIndex ] );
+			$sparkline.data( "counts", sparkCounts );
+			$sparkline.sparkline( sparkCounts, { width: "100px" } );
+
+			if ( $badge.text() !== counts[ countIndex ] || kiosk.updateFlag ) {
 				$badge.text( counts[ countIndex ] ) //.end()
 					//.effect( "highlight", {}, 6000 );
 					.effect( "pulsate", { times: 3 }, 500 );
@@ -391,9 +440,23 @@
 	};
 
 	kiosk.initGuage = function() {
-		jQuery( "#resetCheckinRate" ).on( "click", function() {
-			kiosk.checkinRate = [ { total: 0, rate: 0 } ];
-			kiosk.checkinRateUpdate();
+		jQuery( "#resetCheckinRate" ).on( "click", function( e ) {
+			kiosk.checkinRate = { status: kiosk.checkinRate.status, stats: [ { total: 0, rate: 0 } ] };
+			window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
+			kiosk.checkinRateRender();
+			e.preventDefault();
+		});
+		jQuery( "#startCheckinRate" ).on( "click", function( e ) {
+			kiosk.checkinRate.status = "checking";
+			window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
+			kiosk.checkinRateRender();
+			e.preventDefault();
+		});
+		jQuery( "#stopCheckinRate" ).on( "click", function( e ) {
+			kiosk.checkinRate.status = "stopped";
+			window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
+			kiosk.checkinRateRender();
+			e.preventDefault();
 		});
 
 		kiosk.guage = {};
@@ -415,45 +478,30 @@
 			title: "Average Check-ins",
 			label: "per minute"
 		});
+
+		kiosk.guage.total = new JustGage({
+			id: "gaugeCheckinTotal",
+			value: 0,
+			min: 0,
+			max: 500,
+			title: "Total Check-ins",
+			label: ""
+		});
 	};
 
-/*
+	kiosk.insertSparklinks = function() {
+		var $locations = $( ".table th:contains('Locations')" );
 
-table table-striped <-- add classes (remove existing grid class)
+		$( ".table td:nth-child(" + ( $locations.index() + 1 ) + ")" ).each(function() {
+			var $this = $( this );
 
-<form class="form-horizontal">
-  <div class="control-group">
-    <label class="control-label" for="inputEmail">Email</label>
-    <div class="controls">
-      <input type="text" id="inputEmail" placeholder="Email">
-    </div>
-  </div>
-  <div class="control-group">
-    <label class="control-label" for="inputPassword">Password</label>
-    <div class="controls">
-      <input type="password" id="inputPassword" placeholder="Password">
-    </div>
-  </div>
-  <div class="control-group">
-    <div class="controls">
-      <label class="checkbox">
-        <input type="checkbox"> Remember me
-      </label>
-      <button type="submit" class="btn">Sign in</button>
-    </div>
-  </div>
-</form>
-
-rows
-.success	Indicates a successful or positive action.
-.error	Indicates a dangerous or potentially negative action.
-.warning	Indicates a warning that might need attention.
-.info
-
-play sound
-<audio src="elvis.ogg" controls preload="auto" autobuffer></audio>
-
-*/
+			if ( !$this.is( ":contains('TOTAL')" ) ) {
+				$this.html(function( index, html ) {
+					return html + '<span class="sparklines" style="float: right; padding-right: 100px;"></span>';
+				}).find( ".sparklines" ).data( "counts", [] ).sparkline({ width: "100px" });
+			}
+		});
+	};
 
 })( window.kiosk = window.kiosk || {}, jQuery );
 
