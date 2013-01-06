@@ -5,6 +5,7 @@
  * - Clean up the Staff dialog
  * - Refactor code
  * - Make Staff error when 0 and warning when 1, green when 3+
+ * - Show if participant is adult or child
  */
 
 (function ( kiosk, $, undefined ) {
@@ -93,7 +94,7 @@
 
 	kiosk.rearrange = function() {
 		kiosk.removeRows();
-		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-hover table-striped" );
+		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-condensed" ); // table-striped  table-hover
 		kiosk.rearrangeColumns();
 		kiosk.removeColumn( "Open" );
 		kiosk.removeColumn( "Area" );
@@ -108,6 +109,8 @@
 		kiosk.hijackParticipant();
 		kiosk.hijackStaff();
 		kiosk.hijackOpenClosed();
+
+		jQuery( "<style type='text/css'>.closed { background-color: #e8e8e8; } </style>" ).appendTo( "head" );
 
 		jQuery("form .table").css({ float: "left", width: "60%"})
 			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:175px"></div><div id="gaugeCheckinAverage" style="width:300px; height:175px"></div><div id="gaugeCheckinTotal" style="width:300px; height:175px"></div><div style="text-align: right;"><button id="startCheckinRate" style="margin-right: 5px;" class="btn btn-primary" type="button">Start</button><button id="resetCheckinRate" style="margin-right: 5px;" class="btn">Reset</button><button id="stopCheckinRate" type="button" style="margin-right: 5px;" class="btn btn-danger" type="button">Stop</button></div></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
@@ -287,11 +290,12 @@
 
 	kiosk.updateBadge = function( $badge, currentCount, maximumCount ) {
 		var classes = "badge-important badge-success badge-warning badge-inverse",
-			rowClasses = "success error warning info",
+			rowClasses = "success error warning info closed",
 			$row = $badge.closest( "tr" );
 
 		if ( $badge.closest( "tr" ).css( "text-decoration" ) === "line-through" ) {
 			$badge.removeClass( classes ); //.addClass( "badge-inverse" );
+			$row.removeClass( rowClasses ).addClass( "closed" );
 		} else {
 			if ( currentCount >= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-important" );
