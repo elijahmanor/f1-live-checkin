@@ -1,11 +1,16 @@
 /*jshint eqeqeq:true, strict:true */
 /*globals jQuery:false, console:false, toastr:false, chrome:false, Gauge:false, JustGage:false */
 
-/* TODO
- * - Clean up the Staff dialog
+/*
+Feature Enhancments
+ * - Reset sparklines
+ * - Warning on staff (0, 1 adult, 1 student, all students/no adults)
+ * - Make max participants based on ratio, then manual max, then override
  * - Refactor code
- * - Make Staff error when 0 and warning when 1, green when 3+
- * - Show if participant is adult or child
+BUGS
+ * - When class is closed & close it, it says it is full again
+ * - Better system refresh when multiple full classes & change max
+ * - Changing a max number sometimes refreshes too soon & says full
  */
 
 (function ( kiosk, $, undefined ) {
@@ -40,7 +45,6 @@
 			var checkinRateUpdate = function() {
 				var total = parseInt( $( ".table tr:last td:nth-child(3)" ).text(), 10 ),
 					lastCheckInRate = kiosk.checkinRate.stats[ kiosk.checkinRate.stats.length - 1 ],
-					// rate = Math.floor( Math.random() * 31 ),
 					rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0,
 					average = 0;
 
@@ -53,7 +57,6 @@
 				update();
 			};
 
-			// window.setTimeout( checkinRateUpdate, 15000 );
 			window.setTimeout( checkinRateUpdate, 60000 );
 
 			return checkinRateUpdate;
@@ -174,7 +177,6 @@
 		jQuery( "#breadcrumb" ).text( function( index, text ) { return text + " > "; } );
 		jQuery( "#ministry_selection td" ).contents().appendTo( "#breadcrumb" );
 		jQuery( "#breadcrumb" ).prependTo( "#aspnetForm" );
-		// jQuery( "form .table_16:first" ).remove();
 		jQuery( ".grid_16:first" ).remove();
 	};
 
@@ -214,7 +216,6 @@
 				$show = $this.next().find( "a" ),
 				$row = $this.closest( "tr" );
 
-			// TODO: highlight row
 			if ( $row.index() !== $row.siblings().length ) {
 				$this.html( function( index, html ) {
 					return $.trim( html ) ? "<a href='" + $show.attr( "href" ) + "'><span class='badge badge-success'>" + html + "</span></a>" : '<a href="#"><span class="badge badge-success">0</span></a>';
@@ -275,14 +276,12 @@
 
 			sparkCounts.push( counts[ countIndex ] );
 			$sparkline.data( "counts", sparkCounts );
-			$sparkline.sparkline( sparkCounts, { width: "100px" } );
+			$sparkline.sparkline( sparkCounts, { /* height: "15px", */ width: "100px" } );
 
 			if ( $badge.text() !== counts[ countIndex ] || kiosk.updateFlag ) {
-				$badge.text( counts[ countIndex ] ) //.end()
-					//.effect( "highlight", {}, 6000 );
+				$badge.text( counts[ countIndex ] )
 					.effect( "pulsate", { times: 3 }, 500 );
 				kiosk.updateBadge( $badge, currentCount, maxCount );
-				// .effect( "pulsate", { times: 3 }, 500 );
 			}
 			countIndex++;
 		});
@@ -294,8 +293,10 @@
 			$row = $badge.closest( "tr" );
 
 		if ( $badge.closest( "tr" ).css( "text-decoration" ) === "line-through" ) {
-			$badge.removeClass( classes ); //.addClass( "badge-inverse" );
-			$row.removeClass( rowClasses ).addClass( "closed" );
+			if ( !$row.hasClass( "error" ) ) {
+				$badge.removeClass( classes );
+				$row.removeClass( rowClasses ).addClass( "closed" );
+			}
 		} else {
 			if ( currentCount >= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-important" );
@@ -342,7 +343,6 @@
 				xhr.setRequestHeader( "X-Requested-With", { toString: function() { return ""; } } );
 			},
 			success: function( data ) {
-				//toastr.warning( "My name is Inigo Montoya. You Killed my father, prepare to die!" );
 				var $data = $( data ), participants = [], staff = [], status = [];
 				kiosk.removeRows( $data );
 
@@ -360,7 +360,6 @@
 					status.push( $( this ).html() );
 				});
 				kiosk.updateStatus( status );
-				// toastr.success( "Data has been retrieved from the server" );
 			},
 			error: function( data ) {
 				toastr.error( data, "Error" );
@@ -378,16 +377,24 @@
 		});
 		jQuery( "a[href*='currentcheckin.aspx?part=']" ).on( "click", function( e ) {
 			var that = this;
-			console.log( "clicked participant" );
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			kiosk.getParticipants.call( this, function( markup ) {
 				var popover = $( that ).data( "popover" );
-				popover.options.content = markup || "None"; // + "<br/>" + (new Date()).getTime();
+				popover.options.content = markup || "None";
 				$( that ).popover( "show" );
 			});
 		}).popover({ title: "Participants", content: "Place Holder" });
 	};
+
+/*
+<a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=10833071#472555">Move</a>&nbsp;&nbsp;
+<a href="/people/Individual/Index.aspx?id=10833071">Amy Greene</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol.-Student<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=3282110#472555">Move</a>&nbsp;&nbsp;
+<a href="/people/Individual/Index.aspx?id=3282110">Jeff Johnson</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol. Adult<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=3277787#472555">Move</a>&nbsp;&nbsp;
+<a href="/people/Individual/Index.aspx?id=3277787">Landon Ellerd</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol.-Student<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=3283052#472555">Move</a>&nbsp;&nbsp;
+<a href="/people/Individual/Index.aspx?id=3283052">Mindy Johnson</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol. Adult<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=9974822#472555">Move</a>&nbsp;&nbsp;
+<a href="/people/Individual/Index.aspx?id=9974822">Teresa Greene</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol. Adult<br><br><a href="currentcheckin.aspx?stf=0#472555">Hide Workers</a>
+*/
 
 	kiosk.hijackStaff = function() {
 		console.log( "hijackStaff" );
@@ -396,12 +403,14 @@
 		});
 		jQuery( "a[href*='currentcheckin.aspx?stf=']" ).on( "click", function( e ) {
 			var that = this;
-			console.log( "clicked staff" );
 			e.preventDefault();
 			e.stopImmediatePropagation();
-			kiosk.getParticipants.call( this, function( markup ) {
-				var popover = $( that ).data( "popover" );
-				popover.options.content = markup; // + "<br/>" + (new Date()).getTime();
+			kiosk.getParticipants.call( this, function( markup, raw ) {
+				var popover = $( that ).data( "popover" ),
+					expression = /<a href="[^<>]+">[^<>]+<\/a><br>[^<>]+<br>/g,
+					matches = raw.match( expression );
+
+				popover.options.content = matches ? matches.join( "" ) : markup;
 				$( that ).popover( "show" );
 			});
 		}).popover({ title: "Staff", content: "Place Holder", placement: "left" });
@@ -434,7 +443,7 @@
 					filtered = $( "<div>" ).html( $( content ).filter( ":not(:contains('Participants'))" ).filter( ":not(:contains('Workers'))" ).filter( ":not(:contains('Move'))" ).clone() ).html();
 
 				console.log( "content: " + filtered );
-				callback.call( this, filtered );
+				callback.call( this, filtered, content );
 			},
 			error: function( data ) {
 				console.log( data, "error" );
@@ -465,32 +474,34 @@
 
 		kiosk.guage = {};
 
-		kiosk.guage.current = new JustGage({
-			id: "gaugeCheckinRate",
-			value: 0,
-			min: 0,
-			max: 30,
-			title: "Current Check-ins",
-			label: "per minute"
-		});
+		if ( jQuery( "#gaugeCheckinRate, #gaugeCheckinAverage, #gaugeCheckinTotal" ).length === 3 ) {
+			kiosk.guage.current = new JustGage({
+				id: "gaugeCheckinRate",
+				value: 0,
+				min: 0,
+				max: 30,
+				title: "Current Check-ins",
+				label: "per minute"
+			});
 
-		kiosk.guage.average = new JustGage({
-			id: "gaugeCheckinAverage",
-			value: 0,
-			min: 0,
-			max: 30,
-			title: "Average Check-ins",
-			label: "per minute"
-		});
+			kiosk.guage.average = new JustGage({
+				id: "gaugeCheckinAverage",
+				value: 0,
+				min: 0,
+				max: 30,
+				title: "Average Check-ins",
+				label: "per minute"
+			});
 
-		kiosk.guage.total = new JustGage({
-			id: "gaugeCheckinTotal",
-			value: 0,
-			min: 0,
-			max: 500,
-			title: "Total Check-ins",
-			label: ""
-		});
+			kiosk.guage.total = new JustGage({
+				id: "gaugeCheckinTotal",
+				value: 0,
+				min: 0,
+				max: 500,
+				title: "Total Check-ins",
+				label: ""
+			});
+		}
 	};
 
 	kiosk.insertSparklinks = function() {
@@ -502,7 +513,7 @@
 			if ( !$this.is( ":contains('TOTAL')" ) ) {
 				$this.html(function( index, html ) {
 					return html + '<span class="sparklines" style="float: right; padding-right: 100px;"></span>';
-				}).find( ".sparklines" ).data( "counts", [] ).sparkline({ width: "100px" });
+				}).find( ".sparklines" ).data( "counts", [] ).sparkline({ /* height: "15px", */ width: "100px" });
 			}
 		});
 	};
