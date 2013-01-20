@@ -97,7 +97,7 @@ BUGS
 
 	kiosk.rearrange = function() {
 		kiosk.removeRows();
-		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-condensed" ); // table-striped  table-hover
+		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-condensed" ); // table-striped table-hover
 		kiosk.rearrangeColumns();
 		kiosk.removeColumn( "Open" );
 		kiosk.removeColumn( "Area" );
@@ -218,7 +218,9 @@ BUGS
 
 			if ( $row.index() !== $row.siblings().length ) {
 				$this.html( function( index, html ) {
-					return $.trim( html ) ? "<a href='" + $show.attr( "href" ) + "'><span class='badge badge-success'>" + html + "</span></a>" : '<a href="#"><span class="badge badge-success">0</span></a>';
+					return $.trim( html ) ?
+						"<a href='" + $show.attr( "href" ) + "'><span class='badge badge-success'>" + html + "</span></a>" :
+						'<a href="#"><span class="badge badge-success">0</span></a>';
 				});
 			}
 		});
