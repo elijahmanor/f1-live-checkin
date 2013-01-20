@@ -197,8 +197,8 @@ BUGS
 		var $participants = $( ".table th:contains('Participant Count')" ).html( "Participants" ),
 			$staff = $( ".table th:contains('Staff Count')" ).html( "Staff" );
 
-		kiosk.mergeColumns( $participants.index() );
-		kiosk.mergeColumns( $staff.index() );
+		kiosk.mergeColumns( $participants.index(), "participants" );
+		kiosk.mergeColumns( $staff.index(), "staff" );
 
 		jQuery( ".table td:nth-child(1) a" ).remove();
 	};
@@ -209,12 +209,13 @@ BUGS
 		jQuery( ".table th:nth-child(" + index + "), .table td:nth-child(" + index + ")" ).remove();
 	};
 
-	kiosk.mergeColumns = function( index ) {
+	kiosk.mergeColumns = function( index, type ) {
 		index += 1;
 		jQuery( ".table td:nth-child(" + index + ")" ).each( function() {
 			var $this = $( this ),
 				$show = $this.next().find( "a" ),
-				$row = $this.closest( "tr" );
+				$row = $this.closest( "tr" ),
+				$badge;
 
 			if ( $row.index() !== $row.siblings().length ) {
 				$this.html( function( index, html ) {
@@ -222,6 +223,10 @@ BUGS
 						"<a href='" + $show.attr( "href" ) + "'><span class='badge badge-success'>" + html + "</span></a>" :
 						'<a href="#"><span class="badge badge-success">0</span></a>';
 				});
+				if ( type === "staff" ) {
+					$badge = $this.find( ".badge" );
+					kiosk.updateBadge( $badge, null, null, type );
+				}
 			}
 		});
 		index += 1;
@@ -263,7 +268,7 @@ BUGS
 		});
 	};
 
-	kiosk.updateCounts = function( title, counts ) {
+	kiosk.updateCounts = function( title, counts, type ) {
 		var columnIndex = $( ".table th:contains('" + title + "')" ).index(),
 			countIndex = 0;
 
@@ -283,34 +288,38 @@ BUGS
 			if ( $badge.text() !== counts[ countIndex ] || kiosk.updateFlag ) {
 				$badge.text( counts[ countIndex ] )
 					.effect( "pulsate", { times: 3 }, 500 );
-				kiosk.updateBadge( $badge, currentCount, maxCount );
+				kiosk.updateBadge( $badge, currentCount, maxCount, type );
 			}
 			countIndex++;
 		});
 	};
 
-	kiosk.updateBadge = function( $badge, currentCount, maximumCount ) {
+	kiosk.updateBadge = function( $badge, currentCount, maximumCount, type, data ) {
 		var classes = "badge-important badge-success badge-warning badge-inverse",
 			rowClasses = "success error warning info closed",
 			$row = $badge.closest( "tr" );
 
-		if ( $badge.closest( "tr" ).css( "text-decoration" ) === "line-through" ) {
-			if ( !$row.hasClass( "error" ) ) {
-				$badge.removeClass( classes );
-				$row.removeClass( rowClasses ).addClass( "closed" );
-			}
-		} else {
+		if ( type === "participants" ) {
 			if ( currentCount >= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-important" );
 				$row.removeClass( rowClasses ).addClass( "error" );
-				kiosk.playSound($.trim($badge.closest("tr").find("td:nth-child(2)").text()));
+				kiosk.playSound( $.trim( $badge.closest( "tr" ).find( "td:nth-child(2)" ).text() ) );
 			} else if ( maximumCount - currentCount <= 2 ) {
 				$badge.removeClass( classes ).addClass( "badge-warning" );
 				$row.removeClass( rowClasses ).addClass( "warning" );
 			} else if ( currentCount <= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-success" );
 				$row.removeClass( rowClasses );
+			} else if ( $badge.closest( "tr" ).css( "text-decoration" ) === "line-through" ) {
+				$badge.removeClass( classes );
+				$row.removeClass( rowClasses ).addClass( "closed" );
 			}
+		} else if ( type === "staff" && !data ) {
+			// TODO: Kick off async call to get staff & update
+			console.log( "updateBadge", type, data );
+		} else if ( type === "staff" && data ) {
+			// TODO: Rules for staff
+			console.log( "updateBadge", type, data, data.match( /adult/ig ), data.match( /student/ig ) );
 		}
 	};
 
@@ -351,12 +360,12 @@ BUGS
 				$data.find( ".grid td:nth-child(" + ( $data.find( ".grid th:contains('Participant Count')").index() + 1 ) + ")" ).each(function() {
 					participants.push( $( this ).text() || "0" );
 				});
-				kiosk.updateCounts( "Participants", participants );
+				kiosk.updateCounts( "Participants", participants, "participants" );
 
 				$data.find( ".grid td:nth-child(" + ( $data.find( ".grid th:contains('Staff Count')").index() + 1 ) + ")" ).each(function() {
 					staff.push( $( this ).text() || "0" );
 				});
-				kiosk.updateCounts( "Staff", staff );
+				kiosk.updateCounts( "Staff", staff, "staff" );
 
 				$data.find( ".grid td:nth-child(3)" ).each(function() {
 					status.push( $( this ).html() );
@@ -389,15 +398,6 @@ BUGS
 		}).popover({ title: "Participants", content: "Place Holder" });
 	};
 
-/*
-<a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=10833071#472555">Move</a>&nbsp;&nbsp;
-<a href="/people/Individual/Index.aspx?id=10833071">Amy Greene</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol.-Student<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=3282110#472555">Move</a>&nbsp;&nbsp;
-<a href="/people/Individual/Index.aspx?id=3282110">Jeff Johnson</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol. Adult<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=3277787#472555">Move</a>&nbsp;&nbsp;
-<a href="/people/Individual/Index.aspx?id=3277787">Landon Ellerd</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol.-Student<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=3283052#472555">Move</a>&nbsp;&nbsp;
-<a href="/people/Individual/Index.aspx?id=3283052">Mindy Johnson</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol. Adult<br><br><a href="/ministry/checkin/currentcheckin.aspx?stf=994525&amp;actdetid=994525&amp;indid=9974822#472555">Move</a>&nbsp;&nbsp;
-<a href="/people/Individual/Index.aspx?id=9974822">Teresa Greene</a><br>Volunteer&nbsp;-&nbsp;FCM-BC- Vol. Adult<br><br><a href="currentcheckin.aspx?stf=0#472555">Hide Workers</a>
-*/
-
 	kiosk.hijackStaff = function() {
 		console.log( "hijackStaff" );
 		jQuery( document ).on( "click", function() {
@@ -412,6 +412,8 @@ BUGS
 					expression = /<a href="[^<>]+">[^<>]+<\/a><br>[^<>]+<br>/g,
 					matches = raw.match( expression );
 
+				kiosk.updateBadge( $( that ).find( ".badge" ), null, null, "staff", matches ? matches.join( "" ) : markup );
+				console.log( "hijackStaff click" );
 				popover.options.content = matches ? matches.join( "" ) : markup;
 				$( that ).popover( "show" );
 			});
