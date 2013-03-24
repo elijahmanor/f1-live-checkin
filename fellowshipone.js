@@ -131,7 +131,8 @@
 
 	kiosk.hijackOpenClosed = function() {
 		jQuery( "a[href^='currentcheckin.aspx?actdetid=']" ).on( "click", function( e ) {
-			var href = $( this ).attr( "href" );
+			var href = $( this ).attr( "href" ),
+				$icon = $( this ).find( "i" );
 
 			jQuery.ajax({
 				type: "POST",
@@ -140,6 +141,7 @@
 				url: href,
 				data: jQuery( "#aspnetForm" ).serialize(),
 				beforeSend: function( xhr ) {
+					$icon.addClass( "icon-refresh-animate" );
 					xhr.setRequestHeader( "X-Requested-With", { toString: function() { return ""; } } );
 				},
 				success: function( data ) {
@@ -152,6 +154,9 @@
 				error: function( data ) {
 					console.log( data, "error" );
 					toastr.error( "Error" );
+				},
+				complete: function() {
+					$icon.removeClass( "icon-refresh-animate" );
 				}
 			});
 			e.preventDefault();
