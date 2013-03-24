@@ -1,7 +1,8 @@
 /*jshint eqeqeq:true, strict:true */
 /*globals jQuery:false, console:false, toastr:false, chrome:false, Gauge:false, JustGage:false */
 
-/*
+/* keyop / F1.checkin / fbctn
+
 Feature Enhancments
  * - Reset sparklines
  * - Warning on staff (0, 1 adult, 1 student, all students/no adults)
@@ -39,7 +40,7 @@ BUGS
 			kiosk.guage.current.refresh( stat.rate );
 			kiosk.guage.average.refresh( Math.floor( average ) );
 			kiosk.guage.total.refresh( Math.floor( stat.total ) );
-			jQuery( "#debug" ).show().css( "padding" , "15px" ).html( JSON.stringify( kiosk.checkinRate ) );
+			//jQuery( "#debug" ).show().css( "padding" , "15px" ).html( JSON.stringify( kiosk.checkinRate ) );
 		};
 		kiosk.checkinRateUpdate = (function update() {
 			var checkinRateUpdate = function() {
@@ -116,7 +117,7 @@ BUGS
 		jQuery( "<style type='text/css'>.closed { background-color: #e8e8e8; } </style>" ).appendTo( "head" );
 
 		jQuery("form .table").css({ float: "left", width: "60%"})
-			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:175px"></div><div id="gaugeCheckinAverage" style="width:300px; height:175px"></div><div id="gaugeCheckinTotal" style="width:300px; height:175px"></div><div style="text-align: right;"><button id="startCheckinRate" style="margin-right: 5px;" class="btn btn-primary" type="button">Start</button><button id="resetCheckinRate" style="margin-right: 5px;" class="btn">Reset</button><button id="stopCheckinRate" type="button" style="margin-right: 5px;" class="btn btn-danger" type="button">Stop</button></div></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
+			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:170px"></div><div id="gaugeCheckinAverage" style="width:300px; height:170px"></div><div id="gaugeCheckinTotal" style="width:300px; height:170px"></div><div style="text-align: right;"><button id="startCheckinRate" style="margin-right: 5px;" class="btn btn-primary" type="button">Start</button><button id="resetCheckinRate" style="margin-right: 5px;" class="btn">Reset</button><button id="stopCheckinRate" type="button" style="margin-right: 5px;" class="btn btn-danger" type="button">Stop</button></div></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
 		kiosk.initGuage();
 
 		jQuery( "#header_search" ).val( "" );
@@ -297,29 +298,64 @@ BUGS
 	kiosk.updateBadge = function( $badge, currentCount, maximumCount, type, data ) {
 		var classes = "badge-important badge-success badge-warning badge-inverse",
 			rowClasses = "success error warning info closed",
-			$row = $badge.closest( "tr" );
+			$row = $badge.closest( "tr" ),
+			isClosed = $row.css( "text-decoration" ) === "line-through";
 
 		if ( type === "participants" ) {
 			if ( currentCount >= maximumCount ) {
 				$badge.removeClass( classes ).addClass( "badge-important" );
 				$row.removeClass( rowClasses ).addClass( "error" );
-				kiosk.playSound( $.trim( $badge.closest( "tr" ).find( "td:nth-child(2)" ).text() ) );
+				if ( !isClosed ) {
+					kiosk.playSound( $.trim( $row.find( "td:nth-child(2)" ).text() ) );
+				}
 			} else if ( maximumCount - currentCount <= 2 ) {
 				$badge.removeClass( classes ).addClass( "badge-warning" );
 				$row.removeClass( rowClasses ).addClass( "warning" );
-			} else if ( currentCount <= maximumCount ) {
+			} else if ( currentCount <= maximumCount && !isClosed ) {
 				$badge.removeClass( classes ).addClass( "badge-success" );
 				$row.removeClass( rowClasses );
-			} else if ( $badge.closest( "tr" ).css( "text-decoration" ) === "line-through" ) {
+			} else if ( isClosed ) {
 				$badge.removeClass( classes );
 				$row.removeClass( rowClasses ).addClass( "closed" );
 			}
 		} else if ( type === "staff" && !data ) {
-			// TODO: Kick off async call to get staff & update
-			console.log( "updateBadge", type, data );
+			// debugger;
+			var href = $badge.closest( "td" ).prev().find( "a" ).attr( "href" );
+			if ( href ) {
+				console.log( "href", href );
+				href = href.replace( "part", "stf" );
+				$badge.closest( "td" ).find( "a ").attr( "href", href ).trigger( "click" );
+				//$row.find( "a[href*='currentcheckin.aspx?stf=']" ).trigger( "click" );
+				console.log( "updateBadge", type, data );
+			}
+			kiosk.updateStaffBadge( $badge, null, null );
 		} else if ( type === "staff" && data ) {
-			// TODO: Rules for staff
 			console.log( "updateBadge", type, data, data.match( /adult/ig ), data.match( /student/ig ) );
+			kiosk.updateStaffBadge( $badge, data.match( /adult/ig ) || [], data.match( /student/ig ) || [] );
+		}
+	};
+
+	kiosk.updateStaffBadge = function( $badge, adults, students ) {
+		// Warning on staff ( 0, 1 adult, 1 student, all students/no adults )
+		var classes = "badge-important badge-success badge-warning badge-inverse";
+
+		if ( !adults && !students ) {
+			if ( parseInt( $badge.text(), 0 ) < 2 ) {
+				console.log( "Warning. Staff is < 2. Don't accept participants. Getting more information..." );
+				$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. Staff is < 2. Don't accept participants. Getting more information..." );
+			}
+		} else if ( adults.length + students.length === 0 ) {
+			console.log( "Warning. No Staff. Don't accept participants." );
+			$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. No Staff. Don't accept participants." );
+		} else if ( adults.length === 1 && !students.length ) {
+			console.log( "Warning. Only 1 adult and no students. Don't accept participants." );
+			$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. Only 1 adult and no students. Don't accept participants." );
+		} else if ( !adults.length && students.length ) {
+			console.log( "Warning. Only students and no adults. Don't accept participants." );
+			$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. Only students and no adults. Don't accept participants." );
+		} else {
+			console.log( "The minimum staff requirements are met to accept participants." );
+			$badge.removeClass( classes ).addClass( "badge-success" ).attr( "title", "The minimum staff requirements are met to accept participants." );
 		}
 	};
 
@@ -415,7 +451,9 @@ BUGS
 				kiosk.updateBadge( $( that ).find( ".badge" ), null, null, "staff", matches ? matches.join( "" ) : markup );
 				console.log( "hijackStaff click" );
 				popover.options.content = matches ? matches.join( "" ) : markup;
-				$( that ).popover( "show" );
+				if ( e.originalEvent ) {
+					$( that ).popover( "show" );
+				}
 			});
 		}).popover({ title: "Staff", content: "Place Holder", placement: "left" });
 	};
