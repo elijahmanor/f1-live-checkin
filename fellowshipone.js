@@ -1,14 +1,20 @@
 /*jshint eqeqeq:true, strict:true */
 /*globals jQuery:false, console:false, toastr:false, chrome:false, Gauge:false, JustGage:false */
 
-/* keyop / F1.checkin / fbctn
-
-Feature Enhancments
+/*
+ * windows users
+ * - keyop / F1.checkin
+ * - command.central / Purple56&
+ * 
+ * fellowshipone user
+ * keyop / F1.checkin / fbctn
+ *
+ * Feature Enhancments
  * - Reset sparklines
  * - Warning on staff (0, 1 adult, 1 student, all students/no adults)
  * - Make max participants based on ratio, then manual max, then override
  * - Refactor code
-BUGS
+ * BUGS
  * - When class is closed & close it, it says it is full again
  * - Better system refresh when multiple full classes & change max
  * - Changing a max number sometimes refreshes too soon & says full
