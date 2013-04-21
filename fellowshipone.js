@@ -22,6 +22,7 @@
 	"use strict";
 
 	var rate = window.localStorage[ "checkinRate" ];
+
 	kiosk.updateFrequency = 10000;
 	kiosk.timers = [];
 	kiosk.updateFlag = true;
@@ -47,7 +48,6 @@
 					average = 0;
 
 				if ( kiosk.checkinRate.status === "checking" ) {
-					console.log({ total: total, rate: rate });
 					kiosk.checkinRate.stats.push({ total: total, rate: rate });
 					window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
 				}
@@ -59,8 +59,8 @@
 
 			return checkinRateUpdate;
 		}());
-		kiosk.checkinRateRender();
 
+		kiosk.checkinRateRender();
 		kiosk.startRefreshLoop();
 	};
 
@@ -95,7 +95,7 @@
 
 	kiosk.rearrange = function() {
 		kiosk.removeRows();
-		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-condensed" ); // table-striped table-hover
+		jQuery( "form .grid").removeClass( "grid" ).addClass( "table table-bordered table-condensed" );
 		kiosk.rearrangeColumns();
 		kiosk.removeColumn( "Open" );
 		kiosk.removeColumn( "Area" );
@@ -139,17 +139,16 @@
 					var $data = $( data ),
 						found = $data.find( "a[href^='" + href.substr( 0, href.indexOf( "&amp;" ) ) +  "']" ).length;
 
-					console.log( "found: " + found );
 					kiosk.getCounts();
 				},
 				error: function( data ) {
-					console.log( data, "error" );
 					toastr.error( "Error" );
 				},
 				complete: function() {
 					$icon.removeClass( "icon-refresh-animate" );
 				}
 			});
+
 			e.preventDefault();
 		});
 	};
@@ -321,18 +320,13 @@
 				$row.removeClass( rowClasses ).addClass( "closed" );
 			}
 		} else if ( type === "staff" && !data ) {
-			// debugger;
 			var href = $badge.closest( "td" ).prev().find( "a" ).attr( "href" );
 			if ( href ) {
-				console.log( "href", href );
 				href = href.replace( "part", "stf" );
 				$badge.closest( "td" ).find( "a ").attr( "href", href ).trigger( "click" );
-				//$row.find( "a[href*='currentcheckin.aspx?stf=']" ).trigger( "click" );
-				console.log( "updateBadge", type, data );
 			}
 			kiosk.updateStaffBadge( $badge, null, null );
 		} else if ( type === "staff" && data ) {
-			console.log( "updateBadge", type, data, data.match( /adult/ig ), data.match( /student/ig ) );
 			kiosk.updateStaffBadge( $badge, data.match( /adult/ig ) || [], data.match( /student/ig ) || [] );
 		}
 	};
@@ -343,20 +337,15 @@
 
 		if ( !adults && !students ) {
 			if ( parseInt( $badge.text(), 0 ) < 2 ) {
-				console.log( "Warning. Staff is < 2. Don't accept participants. Getting more information..." );
 				$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. Staff is < 2. Don't accept participants. Getting more information..." );
 			}
 		} else if ( adults.length + students.length === 0 ) {
-			console.log( "Warning. No Staff. Don't accept participants." );
 			$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. No Staff. Don't accept participants." );
 		} else if ( adults.length === 1 && !students.length ) {
-			console.log( "Warning. Only 1 adult and no students. Don't accept participants." );
 			$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. Only 1 adult and no students. Don't accept participants." );
 		} else if ( !adults.length && students.length ) {
-			console.log( "Warning. Only students and no adults. Don't accept participants." );
 			$badge.removeClass( classes ).addClass( "badge-important" ).attr( "title", "Warning. Only students and no adults. Don't accept participants." );
 		} else {
-			console.log( "The minimum staff requirements are met to accept participants." );
 			$badge.removeClass( classes ).addClass( "badge-success" ).attr( "title", "The minimum staff requirements are met to accept participants." );
 		}
 	};
@@ -420,7 +409,6 @@
 	};
 
 	kiosk.hijackParticipant = function() {
-		console.log( "hijackParticipant" );
 		jQuery( document ).on( "click", function() {
 			jQuery( "a[href*='currentcheckin.aspx?part=']" ).popover( "hide" );
 		});
@@ -437,7 +425,6 @@
 	};
 
 	kiosk.hijackStaff = function() {
-		console.log( "hijackStaff" );
 		jQuery( document ).on( "click", function() {
 			jQuery( "a[href*='currentcheckin.aspx?stf=']" ).popover( "hide" );
 		});
@@ -451,7 +438,6 @@
 					matches = raw.match( expression );
 
 				kiosk.updateBadge( $( that ).find( ".badge" ), null, null, "staff", matches ? matches.join( "" ) : markup );
-				console.log( "hijackStaff click" );
 				popover.options.content = matches ? matches.join( "" ) : markup;
 				if ( e.originalEvent ) {
 					$( that ).popover( "show" );
@@ -463,7 +449,7 @@
 	kiosk.playSound = function(message) {
 		message = message.substr(0, message.indexOf("-"));
 		chrome.extension.sendMessage({action: "playSound", message: message + " is full"}, function(response) {
-			console.log(response.farewell);
+			toastr.success( message + " is full" );
 		});
 	};
 
@@ -471,7 +457,6 @@
 		var $this = $( this ),
 			href = $this.attr( "href" );
 
-		console.log( "getParticipants" );
 		jQuery.ajax({
 			type: "POST",
 			accepts: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -486,11 +471,9 @@
 					content = $data.find( "a[href='" + href.replace( /(.*aspx\?(part|stf)=)(\d*)(#\d*)/, "$10$4" ) +  "']" ).closest( "td" ).html(),
 					filtered = $( "<div>" ).html( $( content ).filter( ":not(:contains('Participants'))" ).filter( ":not(:contains('Workers'))" ).filter( ":not(:contains('Move'))" ).clone() ).html();
 
-				console.log( "content: " + filtered );
 				callback.call( this, filtered, content );
 			},
 			error: function( data ) {
-				console.log( data, "error" );
 				toastr.error( "Error" );
 			}
 		});
