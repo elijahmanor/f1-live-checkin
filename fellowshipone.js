@@ -5,13 +5,11 @@
  * windows users
  * - keyop / F1.checkin
  * - command.central / Purple56&
- * 
+ *
  * fellowshipone user
  * keyop / F1.checkin / fbctn
  *
  * Feature Enhancments
- * - Reset sparklines
- * - Warning on staff (0, 1 adult, 1 student, all students/no adults)
  * - Make max participants based on ratio, then manual max, then override
  * - Refactor code
  * BUGS
