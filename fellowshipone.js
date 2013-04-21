@@ -7,7 +7,7 @@
  * - command.central / Purple56&
  *
  * fellowshipone user
- * keyop / F1.checkin / fbctn
+ * - keyop / F1.checkin / fbctn
  *
  * Feature Enhancments
  * - Make max participants based on ratio, then manual max, then override
@@ -25,7 +25,8 @@
 
 	kiosk.updateFrequency = 10000;
 	kiosk.timers = [];
-	kiosk.updateFlag = true;
+	$( "tr" ).data( "updateFlag", true );
+	// kiosk.updateFlag = true;
 	kiosk.checkinRate = ( rate ? JSON.parse( rate ) : undefined ) || { status: "stopped", stats: [ { total: 0, rate: 0 } ] };
 
 	kiosk.init = function() {
@@ -74,7 +75,8 @@
 				var currentTimeout = kiosk.updateFrequency / 1000;
 				$( "#updateStatus" ).html( currentTimeout + " seconds" );
 				$( "#refreshIcon" ).removeClass( "icon-refresh-animate" );
-				kiosk.updateFlag = false;
+				// kiosk.updateFlag = false;
+				$( "tr" ).data( "updateFlag", false );
 
 				window.setTimeout( function updateTimer() {
 					currentTimeout--;
@@ -142,7 +144,8 @@
 					kiosk.getCounts();
 				},
 				error: function( data ) {
-					toastr.error( "Error" );
+					// toastr.error( "Error" );
+					console.error( "Error" );
 				},
 				complete: function() {
 					$icon.removeClass( "icon-refresh-animate" );
@@ -252,7 +255,8 @@
 
 		$( ".participant-max" ).on( "blur", function() {
 			kiosk.savePreferences();
-			kiosk.updateFlag = true;
+			$( this ).closest( "tr" ).data( "updateFlag", true );
+			// kiosk.updateFlag = true;
 		});
 
 		kiosk.restorePreferences();
@@ -287,7 +291,7 @@
 			$sparkline.data( "counts", sparkCounts );
 			$sparkline.sparkline( sparkCounts, { /* height: "15px", */ width: "100px" } );
 
-			if ( $badge.text() !== counts[ countIndex ] || kiosk.updateFlag ) {
+			if ( $badge.text() !== counts[ countIndex ] || $badge.closest( "tr" ).data( "updateFlag" ) ) {
 				$badge.text( counts[ countIndex ] )
 					.effect( "pulsate", { times: 3 }, 500 );
 				kiosk.updateBadge( $badge, currentCount, maxCount, type );
@@ -400,7 +404,8 @@
 				kiosk.updateStatus( status );
 			},
 			error: function( data ) {
-				toastr.error( data, "Error" );
+				// toastroastr.error( data, "Error" );
+				console.error( data, "Error" );
 			},
 			complete: function() {
 				if ( callback ) { callback(); }
@@ -474,7 +479,8 @@
 				callback.call( this, filtered, content );
 			},
 			error: function( data ) {
-				toastr.error( "Error" );
+				// toastr.error( "Error" );
+				console.error( "Error" );
 			}
 		});
 	};
