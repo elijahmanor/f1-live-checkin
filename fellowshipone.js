@@ -32,20 +32,13 @@
 
 		kiosk.rearrange();
 		kiosk.checkinRateRender = function() {
-			var stat = kiosk.checkinRate.stats[ kiosk.checkinRate.stats.length - 1 ],
-				average = 0;
-
-			kiosk.checkinRate.stats.forEach( function( item ) {
-				average += item.rate;
-			});
-			average = average / kiosk.checkinRate.stats.length;
+			var stat = kiosk.checkinRate.stats[ kiosk.checkinRate.stats.length - 1 ];
 
 			$( "#checkinRateValue" ).text( stat.rate );
 			kiosk.guage.current.refresh( stat.rate );
-			kiosk.guage.average.refresh( Math.floor( average ) );
 			kiosk.guage.total.refresh( Math.floor( stat.total ) );
-			//jQuery( "#debug" ).show().css( "padding" , "15px" ).html( JSON.stringify( kiosk.checkinRate ) );
 		};
+
 		kiosk.checkinRateUpdate = (function update() {
 			var checkinRateUpdate = function() {
 				var total = parseInt( $( ".table tr:last td:nth-child(3)" ).text(), 10 ),
@@ -121,7 +114,7 @@
 		jQuery( "<style type='text/css'>.closed { background-color: #e8e8e8; } </style>" ).appendTo( "head" );
 
 		jQuery("form .table").css({ float: "left", width: "60%"})
-			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:170px"></div><div id="gaugeCheckinAverage" style="width:300px; height:170px"></div><div id="gaugeCheckinTotal" style="width:300px; height:170px"></div><div style="text-align: right;"><button id="startCheckinRate" style="margin-right: 5px;" class="btn btn-primary" type="button">Start</button><button id="resetCheckinRate" style="margin-right: 5px;" class="btn">Reset</button><button id="stopCheckinRate" type="button" style="margin-right: 5px;" class="btn btn-danger" type="button">Stop</button></div></div></div></div><div style="display: none;" class="hero-unit" id="debug"></div></div>');
+			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:170px"></div><div id="gaugeCheckinTotal" style="width:300px; height:170px"></div></div></div></div></div>');
 		kiosk.initGuage();
 
 		jQuery( "#header_search" ).val( "" );
@@ -504,43 +497,15 @@
 	};
 
 	kiosk.initGuage = function() {
-		jQuery( "#resetCheckinRate" ).on( "click", function( e ) {
-			kiosk.checkinRate = { status: kiosk.checkinRate.status, stats: [ { total: 0, rate: 0 } ] };
-			window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
-			kiosk.checkinRateRender();
-			e.preventDefault();
-		});
-		jQuery( "#startCheckinRate" ).on( "click", function( e ) {
-			kiosk.checkinRate.status = "checking";
-			window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
-			kiosk.checkinRateRender();
-			e.preventDefault();
-		});
-		jQuery( "#stopCheckinRate" ).on( "click", function( e ) {
-			kiosk.checkinRate.status = "stopped";
-			window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
-			kiosk.checkinRateRender();
-			e.preventDefault();
-		});
-
 		kiosk.guage = {};
 
-		if ( jQuery( "#gaugeCheckinRate, #gaugeCheckinAverage, #gaugeCheckinTotal" ).length === 3 ) {
+		if ( jQuery( "#gaugeCheckinRate, #gaugeCheckinTotal" ).length === 2 ) {
 			kiosk.guage.current = new JustGage({
 				id: "gaugeCheckinRate",
 				value: 0,
 				min: 0,
 				max: 30,
 				title: "Current Check-ins",
-				label: "per minute"
-			});
-
-			kiosk.guage.average = new JustGage({
-				id: "gaugeCheckinAverage",
-				value: 0,
-				min: 0,
-				max: 30,
-				title: "Average Check-ins",
 				label: "per minute"
 			});
 
