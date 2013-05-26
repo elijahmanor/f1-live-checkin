@@ -141,6 +141,7 @@
 					var $data = $( data ),
 						found = $data.find( "a[href^='" + href.substr( 0, href.indexOf( "&amp;" ) ) +  "']" ).length;
 
+					toastr.success( "" );
 					kiosk.getCounts();
 				},
 				error: function( data ) {
@@ -323,7 +324,7 @@
 				$badge.removeClass( classes );
 				$row.removeClass( rowClasses ).addClass( "closed" );
 			}
-		} else if ( type === "staff" && !data ) {
+		} else if ( type === "staff" && data == null ) {
 			var href = $badge.closest( "td" ).prev().find( "a" ).attr( "href" );
 			if ( href ) {
 				href = href.replace( "part", "stf" );
@@ -454,7 +455,7 @@
 	kiosk.playSound = function(message) {
 		message = message.substr(0, message.indexOf("-"));
 		chrome.extension.sendMessage({action: "playSound", message: message + " is full"}, function(response) {
-			toastr.success( message + " is full" );
+			toastr.error( message + " is full" );
 		});
 	};
 
