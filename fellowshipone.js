@@ -10,7 +10,6 @@
  * - keyop / F1.checkin / fbctn
  *
  * Feature Enhancments
- * - Make max participants based on ratio, then manual max, then override
  * - Refactor code
  * BUGS
  * - When class is closed & close it, it says it is full again
@@ -124,9 +123,13 @@
 
 	kiosk.hijackOpenClosed = function() {
 		jQuery( "a[href^='currentcheckin.aspx?actdetid=']" ).on( "click", function( e ) {
-			var href = $( this ).attr( "href" ),
-				$icon = $( this ).find( "i" );
+			var $this = $( this ),
+				href = $this.attr( "href" ),
+				$icon = $this.find( "i" ),
+				actionPerformed = $icon.is(".icon-ok") ? "Closed" : "Opened",
+				className = $this.closest("td").next().text();
 
+			className = className.substr( 0, className.indexOf( "-" ) );
 			jQuery.ajax({
 				type: "POST",
 				accepts: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -141,7 +144,7 @@
 					var $data = $( data ),
 						found = $data.find( "a[href^='" + href.substr( 0, href.indexOf( "&amp;" ) ) +  "']" ).length;
 
-					toastr.success( "" );
+					toastr.success( className + " " + actionPerformed );
 					kiosk.getCounts();
 				},
 				error: function( data ) {
