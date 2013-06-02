@@ -11,10 +11,9 @@
  *
  * Feature Enhancments
  * - Refactor code
+ * - Make each service remember it's own max participant numbers
  * BUGS
- * - When class is closed & close it, it says it is full again
- * - Better system refresh when multiple full classes & change max
- * - Changing a max number sometimes refreshes too soon & says full
+ * - If class is at 0 participants or 0 staff at 1st launch then won't ever dialog. Workaround: Hard refresh
  */
 
 (function ( kiosk, $, undefined ) {
@@ -267,14 +266,18 @@
 	};
 
 	kiosk.savePreferences = function() {
+		var serviceId = $( "select[name='activeCheckinDropDown']" ).val();
+
 		$( ".participant-max" ).each( function( index, element ) {
-			window.localStorage[ "preference." + index ] = $( this ).text();
+			window.localStorage[ serviceId + ".preference." + index ] = $( this ).text();
 		});
 	};
 
 	kiosk.restorePreferences = function() {
+		var serviceId = $( "select[name='activeCheckinDropDown']" ).val();
+
 		$( ".participant-max" ).each( function( index, element ) {
-			$( this ).text( window.localStorage[ "preference." + index ] );
+			$( this ).text( window.localStorage[ serviceId + ".preference." + index ] );
 		});
 	};
 
