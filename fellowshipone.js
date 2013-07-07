@@ -11,7 +11,6 @@
  *
  * Feature Enhancments
  * - Refactor code
- * - Make each service remember it's own max participant numbers
  * BUGS
  * - If class is at 0 participants or 0 staff at 1st launch then won't ever dialog. Workaround: Hard refresh
  */
@@ -266,7 +265,7 @@
 	};
 
 	kiosk.savePreferences = function() {
-		var serviceId = $( "select[name='activeCheckinDropDown']" ).val();
+		var serviceId = $( "select[name='activeCheckinDropDown'] option[selected]" ).index();
 
 		$( ".participant-max" ).each( function( index, element ) {
 			window.localStorage[ serviceId + ".preference." + index ] = $( this ).text();
@@ -274,7 +273,7 @@
 	};
 
 	kiosk.restorePreferences = function() {
-		var serviceId = $( "select[name='activeCheckinDropDown']" ).val();
+		var serviceId = $( "select[name='activeCheckinDropDown'] option[selected]" ).index();
 
 		$( ".participant-max" ).each( function( index, element ) {
 			$( this ).text( window.localStorage[ serviceId + ".preference." + index ] );
