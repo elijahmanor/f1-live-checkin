@@ -45,10 +45,8 @@
 					rate = lastCheckInRate.total ? total - lastCheckInRate.total : 0,
 					average = 0;
 
-				if ( kiosk.checkinRate.status === "checking" ) {
-					kiosk.checkinRate.stats.push({ total: total, rate: rate });
-					window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
-				}
+				kiosk.checkinRate.stats.push({ total: total, rate: rate });
+				window.localStorage[ "checkinRate" ] = JSON.stringify( kiosk.checkinRate );
 				kiosk.checkinRateRender();
 				update();
 			};
@@ -143,6 +141,7 @@
 						found = $data.find( "a[href^='" + href.substr( 0, href.indexOf( "&amp;" ) ) +  "']" ).length;
 
 					toastr.success( className + " " + actionPerformed );
+					//updateBadge
 					kiosk.getCounts();
 				},
 				error: function( data ) {
