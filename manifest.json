@@ -22,7 +22,7 @@
     }
   ],
   "web_accessible_resources": [
-    "tos-intercom.ogg", "https://www.google.com/jsapi"
+    "tos-intercom.ogg", "https://www.google.com/jsapi", "glyphicons-halflings.png", "glyphicons-halflings-white.png"
   ],
   "manifest_version": 2
 }
