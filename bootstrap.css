@@ -5274,19 +5274,19 @@ a.thumbnail:hover {
 
 .label,
 .badge {
-  font-size: 11.844px;
-  font-weight: bold;
-  line-height: 14px;
-  color: #ffffff;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-  white-space: nowrap;
-  vertical-align: baseline;
-  background-color: #999999;
+  font-size: 11.844px !important;
+  font-weight: bold !important;
+  line-height: 14px !important;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25) !important;
+  white-space: nowrap !important;
+  vertical-align: baseline !important;
+  background-color: #999999 !important;
 
   /* BEGIN ETM */
-  width: 20px;
-  text-align: center;
-  display: inline-block;
+  width: 20px !important;
+  text-align: center !important;
+  display: inline-block !important;
   /* END ETM */
 }
 
@@ -5313,52 +5313,52 @@ a.badge:hover {
 
 .label-important,
 .badge-important {
-  background-color: #b94a48;
+  background-color: #b94a48 !important;
 }
 
 .label-important[href],
 .badge-important[href] {
-  background-color: #953b39;
+  background-color: #953b39 !important;
 }
 
 .label-warning,
 .badge-warning {
-  background-color: #f89406;
+  background-color: #f89406 !important;
 }
 
 .label-warning[href],
 .badge-warning[href] {
-  background-color: #c67605;
+  background-color: #c67605 !important;
 }
 
 .label-success,
 .badge-success {
-  background-color: #468847;
+  background-color: #468847 !important;
 }
 
 .label-success[href],
 .badge-success[href] {
-  background-color: #356635;
+  background-color: #356635 !important;
 }
 
 .label-info,
 .badge-info {
-  background-color: #3a87ad;
+  background-color: #3a87ad !important;
 }
 
 .label-info[href],
 .badge-info[href] {
-  background-color: #2d6987;
+  background-color: #2d6987 !important;
 }
 
 .label-inverse,
 .badge-inverse {
-  background-color: #333333;
+  background-color: #333333 !important;
 }
 
 .label-inverse[href],
 .badge-inverse[href] {
-  background-color: #1a1a1a;
+  background-color: #1a1a1a !important;
 }
 
 .btn .label,
