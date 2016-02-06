@@ -108,7 +108,7 @@
 		kiosk.hijackStaff();
 		kiosk.hijackOpenClosed();
 
-		jQuery( "<style type='text/css'>.closed { background-color: #e8e8e8; } </style>" ).appendTo( "head" );
+		jQuery( "<style type='text/css'>.closed { background-color: #e8e8e8; } tr.closed .badge { background-color: #999 !important; } tr.closed td { color: #999; text-decoration: line-through; } tr.closed .sparklines { opacity: 0.25; } </style>" ).appendTo( "head" );
 
 		jQuery("form .table").css({ float: "left", width: "60%"})
 			.after('<div class="stats" style="float:right; width: 35%;"><div class="hero-unit" style="padding: 15px;"><div><div><div id="gaugeCheckinRate" style="width:300px; height:170px"></div><div id="gaugeCheckinTotal" style="width:300px; height:170px"></div></div></div></div></div>');
@@ -174,8 +174,8 @@
 	};
 
 	kiosk.updateOpenClosed = function() {
-		jQuery( ".table a[href$='&oc=1']" ).html( '<i class="icon-remove"></i>' ).closest( "tr" ).css( "text-decoration", "line-through" );
-		jQuery( ".table a[href$='&oc=0']" ).html( '<i class="icon-ok"></i>' ).closest( "tr" ).css( "text-decoration", "none" );
+		jQuery( ".table a[href$='&oc=1']" ).html( '<i class="icon-remove"></i>' ).closest( "tr" ).addClass('closed');
+		jQuery( ".table a[href$='&oc=0']" ).html( '<i class="icon-ok"></i>' ).closest( "tr" ).removeClass('closed');
 	};
 
 	kiosk.moveMinistrySelector = function() {
@@ -221,12 +221,13 @@
 			var $this = $( this ),
 				$show = $this.next().find( "a" ),
 				$row = $this.closest( "tr" ),
-				$badge;
+				$badge,
+                isClosed = !!$row.find("a[href$='&oc=1']").length;
 
 			if ( $row.index() !== $row.siblings().length ) {
 				$this.html( function( index, html ) {
 					return $.trim( html ) ?
-						"<a href='" + $show.attr( "href" ) + "'><span class='badge badge-success'>" + html + "</span></a>" :
+						"<a href='" + $show.attr( "href" ) + "'><span class='badge " + ( isClosed ? "" : "badge-success" ) + "'>" + html + "</span></a>" :
 						'<a href="#"><span class="badge badge-success">0</span></a>';
 				});
 				if ( type === "staff" ) {
@@ -249,7 +250,7 @@
 			if ( $row.index() !== $row.siblings().length ) {
 				$( this ).html(function( index, html ) {
 					html = $.trim( html ) || "0";
-					return html + "<span> / </span><span class='badge participant-max' contenteditable='true'>0</span>";
+					return html + "<span> / </span><span class='badge badge-maxParticipants participant-max' contenteditable='true'>0</span>";
 				});
 			}
 		});
@@ -365,10 +366,12 @@
 		$( ".table td:nth-child(1)" ).each(function() {
 			var $anchor = $( this ).find( "a" );
 			if ( ~status[ index ].indexOf( "oc=1" ) ) {
+                // class is closed
 				$anchor.attr( "href", function( index, href ) {
 					return href.replace( "oc=0", "oc=1" );
 				}).find( "i" ).removeClass( "icon-ok" ).addClass( "icon-remove" );
 			} else  {
+                // class is opened
 				$anchor.attr( "href", function( index, href ) {
 					return href.replace( "oc=1", "oc=0" );
 				}).find( "i" ).removeClass( "icon-remove" ).addClass( "icon-ok" );
@@ -422,7 +425,7 @@
 		jQuery( document ).on( "click", function() {
 			jQuery( "a[href*='currentcheckin.aspx?part=']" ).popover( "hide" );
 		});
-		jQuery( "a[href*='currentcheckin.aspx?part=']" ).on( "click", function( e ) {
+        jQuery( "a[href*='currentcheckin.aspx?part=']" ).on( "click", function( e ) {
 			var that = this;
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -430,7 +433,7 @@
 				var popover = $( that ).data( "popover" );
 				popover.options.content = markup || "None";
 				$( that ).popover( "show" );
-			});
+            });
 		}).popover({ title: "Participants", content: "Place Holder" });
 	};
 
