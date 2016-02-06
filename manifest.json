@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "matches": [ "https://portal.fellowshipone.com/*" ],
-      "css": [ "bootstrap.css", "bootstrap-responsive.css", "toastr.css", "toastr-responsive.css", "jquery-ui.css" ],
+      "css": [ "bootstrap.css", "bootstrap-responsive.css", "toastr.css", "toastr-responsive.css", "jquery-ui.css", "fellowshipone.css" ],
       "js": [ "jquery-1.8.0.min.js", "bootstrap.js", "toastr.js", "jquery.sparkline.js", "jquery-ui.js", "gauge.min.js", "raphael.2.1.0.min.js", "justgage.1.0.1.min.js", "fellowshipone.js" ]
     }
   ],
